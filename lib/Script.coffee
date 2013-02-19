@@ -29,7 +29,7 @@ module.exports.load = ( filename, settings, callback ) ->
   throw new Error 'Invalid settings' unless settings and settings instanceof Settings
 
   throw new Error 'Failed to stat file' unless fs.statSync filename
-  parser = new ScriptParser fs.readFileSync(filename), filename
+  parser = new ScriptParser fs.readFileSync(filename, 'utf8'), filename
 
   if parser.sections.request.length < 1
     console.error " \x1b[1;33m⚠\x1b[1;33m  WARNING: Skipping file, no request section found in: #{filename}\x1b[0m"
