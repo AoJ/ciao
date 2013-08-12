@@ -11,9 +11,10 @@ var Request = require( '../lib/Request' );
 var Settings = require( '../lib/Settings' );
 var Suite = require( '../lib/Suite' );
 var ScriptParser = require( '../lib/ScriptParser' );
+var version = require('../package').version;
 
 program
-  .version('0.1.8')
+  .version(version)
   .usage('[options] <file ...>')
   .option('-g, --gist [url]', 'load script from github gist')
   .option('-c, --conf [dir]', 'an additional config file to load after ciao.json')
@@ -26,22 +27,26 @@ basesettings = new Settings();
 basesettings.loadFromFile( 'ciao.json', true );
 if( program.conf ){ basesettings.loadFromFile( program.conf ); }
 
+// Set Reporter
+if( !program.silent ){
+  if( program.verbose ){
+    var reporter = new Reporter.reqRes();
+  }
+  else {
+    var reporter = new Reporter.suite();
+  }
+}
+
 var ciao = function( settings, parser, filename )
 {
   if( parser.sections.request[0] ){
     var runner = new Runner( parser.sections.assert );
-    
-    // Set Reporter
-    if( !program.silent ){
-      runner.listener( Reporter.standard );
-      if( program.verbose ){
-        runner.listener( Reporter.reqRes );
-      }
-    }
+    reporter.watch( runner );
+    parser.sections.assert.map( function () { runner.emit('start'); } );
 
     // HTTP Request
     var http = new Request();
-    http.listener( runner.complete );
+    http.on( 'complete', runner.complete );
 
     // Documentation
     if( program.documentation )
@@ -49,9 +54,8 @@ var ciao = function( settings, parser, filename )
       filename = path.resolve( filename );
       var docTarget = filename.replace( process.cwd(), process.cwd() + '/' + program.documentation );
       var docFile = docTarget.replace( '.coffee', '.md' );
-      var documentation = new Documentor( parser.sections.request[0].title, docFile );
-      runner.listener( documentation.documentTest );
-      http.listener( documentation.documentTransaction );
+      var documentation = new Documentor( runner, parser.sections.request[0].title, docFile );
+      http.on( 'complete', documentation.documentTransaction );
     }
 
     // Send the Request
@@ -61,10 +65,10 @@ var ciao = function( settings, parser, filename )
 
 // Run gist
 if( program.gist ){
-  program.gist = program.gist.replace( 'https://gist.github.com/', '');
+  program.gist = program.gist.replace( 'https://gist.github.com/', '' );
   settings = new Settings();
-  request = new Request();
-  request.listener( function( e, req, res, data ){
+  http = new Request();
+  http.on( 'complete', function( e, req, res, data ){
     parser = new ScriptParser( data, program.gist );
     if( !parser.sections.request[0] )
     {
@@ -73,7 +77,7 @@ if( program.gist ){
     }
     Script.mergeSettings( program.gist, settings, parser, ciao );
   });
-  request.transfer({
+  http.transfer({
     "protocol": "https:",
     "port": 443,
     "host": "gist.github.com",
