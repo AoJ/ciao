@@ -1,6 +1,8 @@
-Request = require 'lib/Request'
+Request      = require 'lib/Request'
+EventEmitter = require('events').EventEmitter
+
 should = require 'should'
-fs = require 'fs'
+fs     = require 'fs'
 
 describe 'Request', ->
 
@@ -10,14 +12,14 @@ describe 'Request', ->
 
     it 'should set default properties', ->
 
-      request.data.should.eql ''
-      request.listeners.should.eql []
+      request.should.be.instanceof EventEmitter
+      request.data.should.equal ''
 
       request.request.should.be.instanceof Function
       request.transfer.should.be.instanceof Function
-      request.listener.should.be.instanceof Function
 
-  describe 'transfer', ->
+  # TODO This test is shit, scrub it and start again
+  describe 'transfer json', ->
 
     events = {}
     client = {}
@@ -25,23 +27,63 @@ describe 'Request', ->
       setEncoding: ( enc ) -> enc.should.equal 'utf8'
       on: ( key, cb ) -> events[key] = cb
 
-    client.write = ( body ) -> body.should.eql '{\"bingo\":\"bango\"}\n'
+    client.write = ( body ) -> body.should.eql '{\"bingo\":{\"bango\":\"bongo"}}'
     client.end = () -> null
     client.request = ( req, cb ) ->
       cb client.res
       return client
 
-    listener = ( error, req, res, data ) ->
-      should.not.exist error
-      req.should.eql { host: 'www.bingo.com', body: { bingo: 'bango' }, agent: false }
-      res.should.equal client.res
-      data.should.equal 'bingobango'
+    it 'functional test', ->
+
+      request = new Request()
+
+      request.on 'complete', ( error, req, res, data ) ->
+        should.not.exist error
+        req.should.eql { host: 'www.bingo.com', body: { bingo: { bango: 'bongo' } }, agent: false }
+        res.should.equal client.res
+        data.should.equal 'bingobango'
+
+      request.transfer { host: 'www.bingo.com', body: { bingo: { bango: 'bongo' } } }, client
+
+      events['data']( 'bingo' )
+      events['data']( 'bango' )
+      events['end']()
+
+  # This test is shit, scrub it and start again
+  describe 'transfer form data', ->
+
+    events = {}
+    client = {}
+    client.res =
+      setEncoding: ( enc ) -> enc.should.equal 'utf8'
+      on: ( key, cb ) -> events[key] = cb
+
+    client.write = ( body ) -> body.should.eql 'bingo[bango]=bongo&ping=pong'
+    client.end = () -> null
+    client.request = ( req, cb ) ->
+      cb client.res
+      return client
 
     it 'functional test', ->
 
       request = new Request()
-      request.listener listener
-      request.transfer { host: 'www.bingo.com', body: bingo: 'bango' }, client
+
+      request.on 'complete', ( error, req, res, data ) ->
+        should.not.exist error
+        req.should.eql {
+          host: 'www.bingo.com',
+          body: { bingo: { bango: 'bongo' }, ping: 'pong' },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          agent: false
+        }
+        res.should.equal client.res
+        data.should.equal 'bingobango'
+
+      request.transfer {
+        host: 'www.bingo.com',
+        body: { bingo: { bango: 'bongo' }, ping: 'pong' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }, client
 
       events['data']( 'bingo' )
       events['data']( 'bango' )
@@ -53,13 +95,3 @@ describe 'Request', ->
 
       request = new Request()
       request.request.length.should.eql 2
-
-  describe 'listener', ->
-
-    it 'should add one listener', ->
-
-      callback = () -> return null
-      request = new Request()
-      request.listener callback
-      request.listeners.length.should.eql 1
-      request.listeners.should.eql [ callback ]

@@ -1,13 +1,14 @@
 
 http = require 'http'
 https = require 'https'
+qs = require 'qs'
+EventEmitter = require('events').EventEmitter
 
-class Request
+class Request extends EventEmitter
 
   constructor: () ->
 
     @data = ''
-    @listeners = []
 
   transfer: (req,client=http) =>
 
@@ -22,21 +23,28 @@ class Request
 
       res.setEncoding 'utf8'
       res.on 'data', (chunk) => @data += chunk
-      res.on 'end',  ()   => @listeners.map (listener) => listener null, req, res, @data
-      res.on 'error', (e) => @listeners.map (listener) -> listener e, req, res, @data
-      res.on 'close', (e) => @listeners.map (listener) -> listener e, req, res, @data
+      res.on 'end',  ()   => @emit 'complete', null, req, res, @data
+      res.on 'error', (e) => @emit 'complete', e, req, res, @data
+      res.on 'close', (e) => @emit 'complete', e, req, res, @data
+
+    if not req.body? and req.headers?['Content-Type'] is 'application/json'
+      req.body = {}
+
+    # This is required or http.request throws a socket hangup error
+    if req.method is 'GET' then req.body = undefined
 
     if req.body?
-
       if 'string' is typeof req.body 
-        request.write "#{req.body}\n"
+        request.write "#{req.body}"
 
       else if 'object' is typeof req.body
-        json = JSON.stringify req.body
-        request.write "#{json}\n"
+        if req.headers?['Content-Type'] is 'application/x-www-form-urlencoded'
+          body = qs.stringify req.body
+          request.write "#{body}"
+        else
+          json = JSON.stringify req.body
+          request.write "#{json}"
 
     request.end()
-
-  listener: (callback) => @listeners.push callback
 
 module.exports = Request
