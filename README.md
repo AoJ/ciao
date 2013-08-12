@@ -58,7 +58,9 @@ json.should.include
 When you run a script, documentation is produced. eg:
 [Github API Example - Documentation](https://github.com/missinglink/ciao/blob/master/doc/scripts/examples/github-api.md)
 
-# Interpreter directives
+---
+
+# Writing Scripts
 
 Ciao uses a special syntax to declare the start and end of code blocks.
 
@@ -75,6 +77,8 @@ eg. `#> Contact page is available` defines a `#> request` block with the title `
 
 The title is used for reporting & documentation, so the better your titles, the easier life will be for you.
 
+---
+
 # Installing Ciao
 
 To install the most stable `ciao` binary globally on your system via `npm` you can simply:
@@ -84,9 +88,13 @@ $ [sudo] npm install -g ciao
 $ ciao --help
 ```
 
-* Note: documentation (such as this README) may cover features not yet available via `npm`.
-* Note: you will need `node` and `npm` installed first: http://nodejs.org/download/
+[![NPM](https://nodei.co/npm/ciao.png?downloads=true&stars=true)](https://nodei.co/npm/ciao)
 
+Note: you will need `node` and `npm` installed first.
+
+The easiest way to install `node.js` is with [nave.sh](https://github.com/isaacs/nave) by executing `[sudo] ./nave.sh usemain 0.10`
+
+---
 
 # Running Scripts
 
@@ -136,6 +144,8 @@ $ ciao --gist https://gist.github.com/missinglink/4678610
 
 Note: The way the gist flag behaves has changed since `0.1.8`, please upgrade if you have issues.
 
+---
+
 # Requests
 
 The ciao request format is the same as that of the `node.js` native http client `http.request`.
@@ -178,6 +188,8 @@ headers: 'Accept': 'application/json'
 #? Should have preferGlobal set to true
 json.preferGlobal.should.be.true
 ```
+
+---
 
 # Assertions
 
@@ -243,16 +255,23 @@ $('body.mediawiki > div#mw-page-base').length.should.eql 1
 #? Check headers are correctly rendered
 $('span.mw-headline').first().text().should.eql "From today's featured article"
 $('span.mw-headline').eq(1).text().should.eql "Did you know..."
-$('span.mw-headline').eq(2).text().should.eql "In the news"
-$('span.mw-headline').eq(3).text().should.eql "On this day..."
+$('span.mw-headline').eq(2).text().should.eql "Today's articles for improvement"
+$('span.mw-headline').eq(3).text().should.eql "In the news"
+$('span.mw-headline').eq(4).text().should.eql "On this day..."
 $('span.mw-headline').last().text().should.eql "Wikipedia languages"
 ```
 
 `cheerio` reference: https://github.com/MatthewMueller/cheerio
 
-# Configuration
+---
 
-Ciao looks for a global configuration file called `ciao.json` in your current working directory.
+# Project Settings
+
+Ciao looks for a project-wide configuration file called `ciao.json` in your current working directory.
+
+The `defaults` section is merged in to every request that is made, it's useful for specifying global request properties such as `host` and `port`.
+
+The `config` section is useful for storing session tokens or any sort of data you would like available to `#! before` or `#> request` blocks.
 
 Example `ciao.json`
 
@@ -271,15 +290,23 @@ Example `ciao.json`
 }
 ```
 
-The `defaults` section is merged in to every request that is made, it's useful for specifying global request properties such as `host` and `port`.
+## Dynamic Project Settings
 
-The `config` section is useful for storing session tokens or any sort of data you would like available to `#! before` or `#> request` blocks.
+If you require your settings to be generated before the test suite runs then you may use a file called `ciao.js` or `ciao.coffee` instead of `ciao.json`.
+
+This is particularly useful for running `fixtures` or any other `local` or `remote` code before your tests start.
+
+Dynamic configurations must export their settings with `module.exports` or an error will be thrown.
+
+Note: This feature was introduced in `0.3.1`, please upgrade if you have issues.
+
+---
 
 # Generate Documentation
 
 Ciao can generate documentation for each `#> request`, the resulting `response` and all `#? assertion` blocks.
 
-The documentation is in `markdown` format and is available in the directory specified using the `-d` option when executing `ciao`
+The documentation is in `markdown` format and is available in the directory specified using the `-d` flag.
 
 eg. To generate documentation in `./doc` for all scripts in `./scripts`:
 ```bash
@@ -288,6 +315,8 @@ $ ciao -d doc scripts
 
 An example generated documentation file can be found here:
 [Github API Example - Documentation](https://github.com/missinglink/ciao/blob/master/doc/scripts/examples/github-api.md)
+
+---
 
 ## How it works
 
@@ -298,18 +327,23 @@ All the requests are launched asyncronously using `http.request`.
 
 After a `response` comes back from the target server; all `#? assertion` blocks are fired asyncronously in a seperate child process.
 
-## Known bugs
+## NPM Module
 
-It's early stages yet; there are a bunch of issues reported here:
-https://github.com/missinglink/ciao/issues
+The `ciao` npm module can be found here:
+[https://npmjs.org/package/ciao](https://npmjs.org/package/ciao)
 
-Please report everything as it comes up, no matter how small.
+## Github Pages
+
+A prettier version of this readme is available here:
+[http://missinglink.github.com/ciao/](http://missinglink.github.com/ciao/)
 
 ## Contributing
 
-Ciao is still in beta, if you are lucky enough to have git access, you're best to use `bleeding edge`:
+Please fork and pull request against upstream master on a feature branch.
 
-### Quick start
+Pretty please; provide unit tests and script fixtures in the `test` and `fixtures` directories.
+
+### Getting Set Up
 
 ```bash
 $ git clone git@github.com:missinglink/ciao.git ciao
@@ -319,12 +353,6 @@ $ npm test
 $ ./bin/ciao scripts/examples
 ```
 
-### I have push access, what can I push?
-
-Since we're in beta, you can push anything as long as you successfully run the commands below before pushing.
-
-Pretty please; provide unit tests and script fixtures in the `test` and `fixtures` directories.
-
 ### Running Unit Tests
 
 The unit test suite is run using `mocha`
@@ -332,6 +360,11 @@ The unit test suite is run using `mocha`
 ```bash
 $ npm test
 ```
+
+### Continuous Integration
+
+Travis tests every release against node versions `0.6` `0.8` & `0.10`
+
 [![Build Status](https://travis-ci.org/missinglink/ciao.png?branch=master)](https://travis-ci.org/missinglink/ciao)
 
 ### Running Ciao test scripts
@@ -341,6 +374,13 @@ This will execute all tests in the `./scripts` directory and write documentation
 ```bash
 $ npm run ciao
 ```
+
+### Known bugs
+
+It's early stages yet; there are a bunch of issues reported here:
+https://github.com/missinglink/ciao/issues
+
+Please report everything as it comes up, no matter how small.
 
 ### Code review
 
