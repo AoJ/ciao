@@ -2,22 +2,20 @@
   "name": "ciao",
   "preferGlobal": true,
   "private": false,
-  "version": "0.1.8",
+  "version": "0.3.2",
   "description": "Ciao is a simple command line utility for testing http(s) requests and generating API documentation",
   "contributors": [],
   "dependencies": {
     "walk": "~2.2.1",
-    "coffee-script": "~1.4.0",
+    "coffee-script": "~1.6.2",
     "mkdirp": "0.3.x",
-    "underscore": "~1.4.3",
     "deepmerge": "~0.2.5",
     "should": "~1.2.1",
     "commander": "*",
-    "q": "*",
     "async": "~0.1.22",
     "winston": "~0.6.2",
-    "ping": "~0.1.1",
-    "cheerio": "~0.10.6"
+    "cheerio": "~0.10.6",
+    "qs": "~0.5.3"
   },
   "bin": {
     "ciao": "./bin/ciao"
@@ -31,8 +29,8 @@
   },
   "readme": "# Ciao\n\nCiao is a simple command line utility for testing http(s) requests and generating API documentation.\n\nFull documentation: http://missinglink.github.com/ciao/",
   "engines": {
-    "node": "0.8.x",
-    "npm": "1.1.x"
+    "node": ">0.6.0",
+    "npm": ">1.1.x"
   },
   "repository": {
     "type": "git",
